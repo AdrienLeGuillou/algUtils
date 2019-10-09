@@ -1,0 +1,22 @@
+Package: algUtils
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Author: Who wrote it
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    dplyr,
+    stringi,
+    assertthat,
+    glue,
+    rlang,
+    purrr,
+    knitr,
+    kableExtra,
+    tibble
+RoxygenNote: 6.1.1
