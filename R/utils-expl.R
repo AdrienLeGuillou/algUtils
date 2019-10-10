@@ -11,9 +11,9 @@ qc_test <- function(df, exed, exry) {
   exry <- dplyr::enquo(exry)
 
   n_lvls <- df %>%
-    select(!!exed, !!exry) %>%
+    dplyr::select(!!exed, !!exry) %>%
     na.omit() %>%
-    pull(!!exry) %>%
+    dplyr::pull(!!exry) %>%
     factor() %>%
     levels() %>%
     length()
@@ -36,8 +36,8 @@ qc_test <- function(df, exed, exry) {
 
   out <-
     df %>%
-    group_by(!!exry) %>%
-    summarise(
+    dplyr::group_by(!!exry) %>%
+    dplyr::summarise(
       "n" = n(),
       "mean" = mean(!!exed, na.rm = T),
       "sd" = sd(!!exed, na.rm = T),
@@ -45,8 +45,8 @@ qc_test <- function(df, exed, exry) {
       "q1" = quantile(!!exed, probs = 0.25, na.rm = T),
       "q3" = quantile(!!exed, probs = 0.75, na.rm = T)
     ) %>%
-    ungroup() %>%
-    mutate(
+    dplyr::ungroup() %>%
+    dplyr::mutate(
       explained = rlang::as_name(exed),
       explainatory = rlang::as_name(exry),
       !!exry := as.character(!!exry),
@@ -54,7 +54,7 @@ qc_test <- function(df, exed, exry) {
       nparam_p = nparam_p
     )
 
-  select(out, explained, explainatory, lvl_exry = !!exry,
+  dplyr::select(out, explained, explainatory, lvl_exry = !!exry,
          n, mean, sd, param_p, median, q1, q3, nparam_p)
 }
 
@@ -68,20 +68,20 @@ qq_test <- function(df, exed, exry) {
   exed <- dplyr::enquo(exed)
   exry <- dplyr::enquo(exry)
 
-  df <- select(df, !!exed, !!exry) %>% na.omit()
+  df <- dplyr::select(df, !!exed, !!exry) %>% na.omit()
 
   out <- tibble::tibble(
     explained = rlang::as_name(exed),
     explainatory = rlang::as_name(exry),
     pearson = cor(df, method = "pearson")[1,2],
     pearson_p = tryCatch(
-      cor.test(pull(df, !!exed), pull(df, !!exry),
+      cor.test(dplyr::pull(df, !!exed), dplyr::pull(df, !!exry),
                     method = "pearson")$p.value,
       error = function(x) NA
     ),
     spearman = cor(df, method = "spearman")[1,2],
     spearman_p = tryCatch(
-      cor.test(pull(df, !!exed), pull(df, !!exry),
+      cor.test(dplyr::pull(df, !!exed), dplyr::pull(df, !!exry),
                method = "spearman")$p.value,
       error = function(x) NA
     )
@@ -104,8 +104,8 @@ cq_test <- function(df, exed, exry) {
 
   out <- qc_test(df, !!exry, !!exed)
 
-  select(out, explained = explainatory, lvl_exed = lvl_exry,
-         explainatory = explained, everything())
+  dplyr::select(out, explained = explainatory, lvl_exed = lvl_exry,
+         explainatory = explained, dplyr::everything())
 }
 
 
@@ -118,7 +118,7 @@ cc_test <- function(df, exed, exry) {
   exed <- dplyr::enquo(exed)
   exry <- dplyr::enquo(exry)
 
-  cont_table <- table(pull(df, !!exed), pull(df, !!exry))
+  cont_table <- table(dplyr::pull(df, !!exed), dplyr::pull(df, !!exry))
   param_p <- tryCatch(
     chisq.test(cont_table)$p.value,
     error = function(msg) NA
@@ -130,11 +130,11 @@ cc_test <- function(df, exed, exry) {
 
   out <-
     df %>%
-    group_by(!!exed, !!exry) %>%
-    summarise(n = n()) %>%
-    mutate("prop" = n / sum(n)) %>%
-    ungroup() %>%
-    mutate(
+    dplyr::group_by(!!exed, !!exry) %>%
+    dplyr::summarise(n = n()) %>%
+    dplyr::mutate("prop" = n / sum(n)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
       explained = rlang::as_name(exed),
       explainatory = rlang::as_name(exry),
       !!exed := as.character(!!exed),
@@ -143,13 +143,169 @@ cc_test <- function(df, exed, exry) {
       nparam_p = nparam_p
     )
 
-  select(out,
+  dplyr::select(out,
          explained, lvl_exed = !!exed,
          explainatory, lvl_exry = !!exry,
          n, prop, param_p, nparam_p)
 }
 
+# formatters ----
+frmt_pvalue <- function(x) {
+  out <- scales::pvalue(x, add_p = T, accuracy = 0.01)
+
+  ifelse(
+    x < 0.001, paste0(out, "***"),
+    ifelse(
+      x < 0.01,  paste0(out, "**"),
+      ifelse(
+        x < 0.05, paste0(out, "*"),
+        out
+      )
+    )
+  )
+}
+
+frmt_mean_sd <- function(mn, st, accuracy = 0.1) {
+  paste0(
+    scales::number(mn, accuracy = accuracy),
+    "\u00B1",
+    scales::number(st, accuracy = accuracy)
+  )
+}
+
+frmt_median_iqr <- function(md, q1, q3, accuracy = 0.1) {
+  paste0(
+    scales::number(md, accuracy = accuracy),
+    " [",
+    scales::number(q1, accuracy = accuracy),
+    "-",
+    scales::number(q3, accuracy = accuracy),
+    "]"
+  )
+}
+
+frmt_n_prop <- function(n, prop, accuracy = 0.1) {
+  paste0(
+    n, " (",
+    scales::percent(prop, accuracy = accuracy), ")"
+  )
+}
+
 # tables ----
+
+kable_def_styles <- function(k) {
+  kableExtra::kable_styling(
+    k,
+    bootstrap_options = c("striped")
+  )
+}
+
+
+kable_cq <- function(df) {
+
+  exed <- unique(df$explained)
+
+  df %>%
+    dplyr::mutate(
+      n = scales::number(n, accuracy = 1),
+      mean = frmt_mean_sd(mean, sd),
+      median = frmt_median_iqr(median, q1, q3)) %>%
+    dplyr::mutate_at(
+      dplyr::vars(param_p, nparam_p),
+      frmt_pvalue
+    ) %>%
+    dplyr::select(-c(explained, sd, q1, q3)) %>%
+    dplyr::select(explainatory, lvl_exed, dplyr::everything()) %>%
+    kableExtra::kable(
+      col.names = c(
+        "", exed, "N", "Mean\u00B1SD", "p-value", "Median [IQR]", "p-value"
+      ),
+      align = c("c", "c", "c", "c", "l", "c", "l")
+    ) %>%
+    kableExtra::collapse_rows(columns = 1) %>%
+    kableExtra::add_header_above(
+      c(" " = 3, "Parametric" = 2, "Non Parametric" = 2)) %>%
+    kable_def_styles()
+}
+
+kable_cc <- function(df) {
+
+  exed <- unique(df$explained)
+
+  df <- df %>%
+    dplyr::mutate(
+      n = frmt_n_prop(n, prop)
+    ) %>%
+    dplyr::mutate_at(
+      dplyr::vars(param_p, nparam_p),
+      frmt_pvalue
+    ) %>%
+    dplyr::select(-c(explained, prop)) %>%
+    dplyr::select(lvl_exed, explainatory, lvl_exry, dplyr::everything()) %>%
+    tidyr::pivot_wider(names_from = lvl_exed, values_from = n) %>%
+    dplyr::select(-c(param_p, nparam_p), dplyr::everything())
+
+  lvls <- setdiff(colnames(df), c("explainatory", "lvl_exry", "param_p", "nparam_p"))
+  grps <- c(2, length(lvls),  1, 1)
+  names(grps) <- c(" ", exed, "Parametric", "Non Parametric")
+
+
+  kableExtra::kable(
+    df,
+    col.names = c(
+      "", "", lvls,  "p-value", "p-value"
+    ),
+    align = c("r", "l", rep("c", ncol(df) - 2))
+  ) %>%
+    kableExtra::collapse_rows(columns = 1) %>%
+    kableExtra::add_header_above(grps) %>%
+    kable_def_styles()
+}
+
+kable_qc <- function(df) {
+  df %>%
+    dplyr::mutate(
+      n = scales::number(n, accuracy = 1),
+      mean = frmt_mean_sd(mean, sd),
+      median = frmt_median_iqr(median, q1, q3)) %>%
+    dplyr::mutate_at(
+      dplyr::vars(param_p, nparam_p),
+      frmt_pvalue
+    ) %>%
+    dplyr::select(-c(explained, sd, q1, q3)) %>%
+    dplyr::select(explainatory, lvl_exry, dplyr::everything()) %>%
+    kableExtra::kable(
+      col.names = c(
+        "", "", "N", "Mean\u00B1SD", "p-value", "Median [IQR]", "p-value"
+      ),
+      align = c("r", "l", "c", "c", "l", "c", "l")
+    ) %>%
+    kableExtra::collapse_rows(columns = 1) %>%
+    kableExtra::add_header_above(
+      c(" " = 3, "Parametric" = 2, "Non Parametric" = 2)) %>%
+    kable_def_styles()
+}
+
+kable_qq <- function(df) {
+  df %>%
+    dplyr::select(-explained) %>%
+    dplyr::mutate_at(
+      dplyr::vars(pearson, spearman),
+      scales::number_format(accuracy = 0.01)
+    ) %>%
+    dplyr::mutate_at(
+      dplyr::vars(pearson_p, spearman_p),
+      frmt_pvalue
+    ) %>%
+    kableExtra::kable(
+      col.names = c(" ", rep(c("Correlation", "p-value"), 2)),
+      align = c("r", rep(c("c", "l"), 2))
+    ) %>%
+    kableExtra::add_header_above(
+      c(" " = 1, "Pearson" = 2, "Spearman" = 2)) %>%
+    kable_def_styles()
+}
+
 
 fmt_pvalue <- function(data, columns, rows = NULL) {
 
@@ -158,7 +314,7 @@ fmt_pvalue <- function(data, columns, rows = NULL) {
 
   # Pass `data`, `columns`, `rows`, and the formatting
   # functions as a function list to `fmt()`
-  fmt(
+  gt::fmt(
     data = data,
     columns = columns,
     rows = !!rows,
@@ -168,8 +324,8 @@ fmt_pvalue <- function(data, columns, rows = NULL) {
         x_str <-
           dplyr::case_when(
             x < 0.01 ~ "<0.01***",
-            between(round(x, 2), 0, 0.01) ~ paste0(round(x, 2), "**"),
-            between(round(x, 2), 0, 0.05) ~ paste0(round(x, 2), "*"),
+            dplyr::between(round(x, 2), 0, 0.01) ~ paste0(round(x, 2), "**"),
+            dplyr::between(round(x, 2), 0, 0.05) ~ paste0(round(x, 2), "*"),
             TRUE ~ as.character(round(x, 2))
           )
       }
@@ -177,9 +333,35 @@ fmt_pvalue <- function(data, columns, rows = NULL) {
   )
 }
 
+gt_qq <- function(df) {
+  gt::gt(
+    df,
+    groupname_col = "explained",
+    rowname_col = "explainatory"
+  ) %>%
+    tab_spanner(
+      label = "parametric",
+      columns = vars(pearson, pearson_p)
+    ) %>%
+    tab_spanner(
+      label = "non parametric",
+      columns = vars(spearman, spearman_p)
+    ) %>%
+    fmt_number(
+      columns = vars(pearson, spearman),
+      decimals = 2
+    ) %>%
+    fmt_pvalue(
+      columns = vars(pearson_p, spearman_p)
+    ) %>%
+    tab_style(
+      style = cells_styles(text_align = "right"),
+      locations = cells_stub()
+    )
+}
 
 gt_qq <- function(df) {
-  gt(
+  gt::gt(
     df,
     groupname_col = "explained",
     rowname_col = "explainatory"
@@ -378,7 +560,7 @@ quant_quali <- function(x) {
 explain_test <- function(df, exed) {
   exed <- dplyr::enquo(exed)
 
-  exed_type <- quant_quali(pull(df, !!exed))
+  exed_type <- quant_quali(dplyr::pull(df, !!exed))
 
   if (exed_type == "quant") {
     quant_test <- qq_test
@@ -390,25 +572,21 @@ explain_test <- function(df, exed) {
     stop(glue::glue("Type of column {rlang::as_name(exed)} not supported" ))
   }
 
-  cols_types <-  vapply(select(df, - !!exed), quant_quali, "")
+  cols_types <-  vapply(dplyr::select(df, - !!exed), quant_quali, "")
   cols_types <- cols_types[cols_types != "unknown"]
 
   quant <- purrr::map_dfr(
     names(cols_types[cols_types == "quant"]),
-    function(x) quant_test(df, !!exed, !!sym(x))
+    function(x) quant_test(df, !!exed, !!dplyr::sym(x))
   )
 
   categ <- purrr::map_dfr(
     names(cols_types[cols_types == "categ"]),
-    function(x) categ_test(df, !!exed, !!sym(x))
+    function(x) categ_test(df, !!exed, !!dplyr::sym(x))
   )
 
   list("quant" = quant, "categ" = categ, "exed_type" = exed_type)
 }
-
-
-# explain_test(df_main, age)
-# explain_test(df_main, score_rsd_cat)
 
 explain_rmd <- function(df, exed, msg = "") {
   exed <- rlang::enquo(exed)
@@ -477,6 +655,79 @@ explain_rmd <- function(df, exed, msg = "") {
       ))
       gt_cc(expl$categ) %>%
         gt::as_raw_html() %>%
+        cat()
+      cat("\n\n")
+    }
+  }
+  else stop("unable to produce the explanation")
+}
+
+#' explain
+#'
+#' @export
+explain_rmd <- function(df, exed, msg = "") {
+  exed <- rlang::enquo(exed)
+
+  expl <- explain_test(df, !!exed)
+
+  cat(glue::glue(
+    "
+    ## Univariate explaining of variable `{rlang::as_label(exed)}` {msg}
+    \n\n
+    ")
+  )
+
+
+  if (expl$exed_type == "quant") {
+    if (nrow(expl$quant) > 0) {
+      cat(glue::glue(
+        "
+      ### Correlation of `{rlang::as_label(exed)}` \\
+       with other quantitative variables
+      \n\n
+      "
+      ))
+      kable_qq(expl$quant) %>%
+        cat()
+      cat("\n\n")
+    }
+
+    if (nrow(expl$categ) > 0) {
+      cat(glue::glue(
+        "
+      ### Value of `{rlang::as_label(exed)}` \\
+      depending on other categorical variables
+      \n\n
+      "
+      ))
+      kable_qc(expl$categ) %>%
+        cat()
+      cat("\n\n")
+    }
+  }
+  else if (expl$exed_type == "categ") {
+    if (nrow(expl$quant) > 0) {
+      cat(glue::glue(
+        "
+      ### Values of other quantitative variables \\
+      depending on the level of `{rlang::as_label(exed)}`
+      \n\n
+      "
+      ))
+      kable_cq(expl$quant) %>%
+        cat()
+      cat("\n\n")
+    }
+
+    if (nrow(expl$categ) > 0) {
+      cat(glue::glue(
+        "
+      ### Proportions of `{rlang::as_label(exed)}` \\
+      depending on other categorical variables
+      \n\n
+      "
+      ))
+      kable_cc(expl$categ) %>%
         cat()
       cat("\n\n")
     }
