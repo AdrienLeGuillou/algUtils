@@ -196,7 +196,8 @@ frmt_n_prop <- function(n, prop, accuracy = 0.1) {
 kable_def_styles <- function(k) {
   kableExtra::kable_styling(
     k,
-    bootstrap_options = c("striped")
+    bootstrap_options = c("striped"),
+    fixed_thead = T
   )
 }
 
