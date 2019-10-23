@@ -150,6 +150,8 @@ cc_test <- function(df, exed, exry) {
 }
 
 # formatters ----
+
+#' @export
 frmt_pvalue <- function(x) {
   out <- scales::pvalue(x, add_p = T, accuracy = 0.01)
 
@@ -165,6 +167,7 @@ frmt_pvalue <- function(x) {
   )
 }
 
+#' @export
 frmt_mean_sd <- function(mn, st, accuracy = 0.1) {
   paste0(
     scales::number(mn, accuracy = accuracy),
@@ -173,6 +176,7 @@ frmt_mean_sd <- function(mn, st, accuracy = 0.1) {
   )
 }
 
+#' @export
 frmt_median_iqr <- function(md, q1, q3, accuracy = 0.1) {
   paste0(
     scales::number(md, accuracy = accuracy),
@@ -184,6 +188,7 @@ frmt_median_iqr <- function(md, q1, q3, accuracy = 0.1) {
   )
 }
 
+#' @export
 frmt_n_prop <- function(n, prop, accuracy = 0.1) {
   paste0(
     n, " (",
