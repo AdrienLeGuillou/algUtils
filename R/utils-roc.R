@@ -26,7 +26,8 @@ ggroc_youden <- function(roc_obj) {
         y = youden["sensitivity"] - .05,
         label = paste0(
           "Spe: ", scales::number(youden["specificity"], accuracy = .01), ", ",
-          "Sen: ", scales::number(youden["sensitivity"], accuracy = .01)
+          "Sen: ", scales::number(youden["sensitivity"], accuracy = .01), ", ",
+          "Cutoff: ", scales::number(youden["cutoff"], accuracy = .01)
         )),
       hjust = "left"
     )
@@ -47,6 +48,7 @@ youden_j_max <- function(roc_obj) {
   c(
     max = youden_max,
     specificity = roc_obj$specificities[youden_max],
-    sensitivity = roc_obj$sensitivities[youden_max]
+    sensitivity = roc_obj$sensitivities[youden_max],
+    cutoff = roc_obj$thresholds[youden_max]
   )
 }
