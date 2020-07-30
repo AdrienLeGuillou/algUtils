@@ -6,9 +6,11 @@
 #' @param exry explainatory variable
 #'
 #' @return a data frame containing descriptions and p-values
-qc_test <- function(df, exed, exry) {
+qc_test <- function(df, exed, exry, na.rm = FALSE) {
   exed <- dplyr::enquo(exed)
   exry <- dplyr::enquo(exry)
+
+  if (na.rm) df <- dplyr::select(df, !!exed, !!exry) %>% tidyr::drop_na()
 
   n_lvls <- df %>%
     dplyr::select(!!exed, !!exry) %>%
@@ -64,7 +66,7 @@ qc_test <- function(df, exed, exry) {
 #' @inheritParams qc_test
 #' @inherit qc_test return
 #'
-qq_test <- function(df, exed, exry) {
+qq_test <- function(df, exed, exry, na.rm = FALSE) {
   exed <- dplyr::enquo(exed)
   exry <- dplyr::enquo(exry)
 
@@ -98,11 +100,11 @@ qq_test <- function(df, exed, exry) {
 #' @inheritParams qc_test
 #' @inherit qc_test return
 #'
-cq_test <- function(df, exed, exry) {
+cq_test <- function(df, exed, exry, na.rm = FALSE) {
   exed <- dplyr::enquo(exed)
   exry <- dplyr::enquo(exry)
 
-  out <- qc_test(df, !!exry, !!exed)
+  out <- qc_test(df, !!exry, !!exed, na.rm)
 
   dplyr::select(out, explained = explainatory, lvl_exed = lvl_exry,
          explainatory = explained, dplyr::everything())
@@ -114,9 +116,11 @@ cq_test <- function(df, exed, exry) {
 #' @inheritParams qc_test
 #' @inherit qc_test return
 #'
-cc_test <- function(df, exed, exry) {
+cc_test <- function(df, exed, exry, na.rm = FALSE) {
   exed <- dplyr::enquo(exed)
   exry <- dplyr::enquo(exry)
+
+  if (na.rm) df <- dplyr::select(df, !!exed, !!exry) %>% tidyr::drop_na()
 
   cont_table <- table(dplyr::pull(df, !!exed), dplyr::pull(df, !!exry))
   param_p <- tryCatch(
@@ -339,216 +343,6 @@ fmt_pvalue <- function(data, columns, rows = NULL) {
   )
 }
 
-gt_qq <- function(df) {
-  gt::gt(
-    df,
-    groupname_col = "explained",
-    rowname_col = "explainatory"
-  ) %>%
-    tab_spanner(
-      label = "parametric",
-      columns = vars(pearson, pearson_p)
-    ) %>%
-    tab_spanner(
-      label = "non parametric",
-      columns = vars(spearman, spearman_p)
-    ) %>%
-    fmt_number(
-      columns = vars(pearson, spearman),
-      decimals = 2
-    ) %>%
-    fmt_pvalue(
-      columns = vars(pearson_p, spearman_p)
-    ) %>%
-    tab_style(
-      style = cells_styles(text_align = "right"),
-      locations = cells_stub()
-    )
-}
-
-gt_qq <- function(df) {
-  gt::gt(
-    df,
-    groupname_col = "explained",
-    rowname_col = "explainatory"
-  ) %>%
-    tab_spanner(
-      label = "parametric",
-      columns = vars(pearson, pearson_p)
-    ) %>%
-    tab_spanner(
-      label = "non parametric",
-      columns = vars(spearman, spearman_p)
-    ) %>%
-    fmt_number(
-      columns = vars(pearson, spearman),
-      decimals = 2
-    ) %>%
-    fmt_pvalue(
-      columns = vars(pearson_p, spearman_p)
-    ) %>%
-    tab_style(
-      style = cells_styles(text_align = "right"),
-      locations = cells_stub()
-    )
-}
-
-gt_qc <- function(df) {
-  df %>%
-    group_by(explainatory) %>%
-    mutate_at(
-      vars(param_p, nparam_p),
-      ~ ifelse(row_number() == 1, .x, NA)
-    ) %>%
-    ungroup() %>%
-    gt(
-      groupname_col = "explainatory",
-      rowname_col = "lvl_exry"
-    ) %>%
-    cols_hide("explained") %>%
-    tab_spanner(
-      label = "parametric",
-      columns = vars(mean, sd, param_p)
-    ) %>%
-    tab_spanner(
-      label = "non parametric",
-      columns = vars(median, q1, q3, nparam_p)
-    ) %>%
-    fmt_number(
-      columns = vars(mean, sd, median, q1, q3),
-      decimals = 2
-    ) %>%
-    fmt_pvalue(
-      columns = vars(param_p, nparam_p)
-    ) %>%
-    fmt_missing(
-      columns = vars(param_p, nparam_p),
-      missing_text = ""
-    ) %>%
-    tab_style(
-      style = cells_styles(text_align = "right"),
-      locations = cells_stub()
-    ) %>%
-    cols_merge(
-      col_1 = vars(mean),
-      col_2 = vars(sd),
-      pattern = "{1} ({2})"
-    ) %>%
-    cols_merge(
-      col_1 = vars(q1),
-      col_2 = vars(q3),
-      pattern = "[{1}-{2}]"
-    ) %>%
-    cols_merge(
-      col_1 = vars(median),
-      col_2 = vars(q1),
-      pattern = "{1} {2}"
-    ) %>%
-    cols_align(
-      columns = vars(mean, median),
-      align = "center"
-    )%>%
-    cols_align(
-      columns = vars(param_p, nparam_p),
-      align = "left"
-    )
-}
-
-gt_cq <- function(df) {
-  df %>%
-    group_by(explainatory) %>%
-    mutate_at(
-      vars(param_p, nparam_p),
-      ~ ifelse(row_number() == 1, .x, NA)
-    ) %>%
-    ungroup() %>%
-  gt(
-    groupname_col = "explainatory",
-    rowname_col = "lvl_exed"
-  ) %>%
-    cols_hide("explained") %>%
-    tab_spanner(
-      label = "parametric",
-      columns = vars(mean, sd, param_p)
-    ) %>%
-    tab_spanner(
-      label = "non parametric",
-      columns = vars(median, q1, q3, nparam_p)
-    ) %>%
-    fmt_number(
-      columns = vars(mean, sd, median, q1, q3),
-      decimals = 2
-    ) %>%
-    fmt_pvalue(
-      columns = vars(param_p, nparam_p)
-    ) %>%
-    fmt_missing(
-      columns = vars(param_p, nparam_p),
-      missing_text = ""
-    ) %>%
-    tab_style(
-      style = cells_styles(text_align = "right"),
-      locations = cells_stub()
-    ) %>%
-    cols_merge(
-      col_1 = vars(mean),
-      col_2 = vars(sd),
-      pattern = "{1} ({2})"
-    ) %>%
-    cols_merge(
-      col_1 = vars(q1),
-      col_2 = vars(q3),
-      pattern = "[{1}-{2}]"
-    ) %>%
-    cols_merge(
-      col_1 = vars(median),
-      col_2 = vars(q1),
-      pattern = "{1} {2}"
-    ) %>%
-    cols_align(
-      columns = vars(mean, median),
-      align = "center"
-    )%>%
-    cols_align(
-      columns = vars(param_p, nparam_p),
-      align = "left"
-    )
-}
-
-gt_cc <- function(df) {
-  df %>%
-    mutate(prop = paste0("(", round(prop *100, 0), "%)")) %>%
-    unite(n, n, prop, sep = " ") %>%
-    spread(lvl_exed, n) %>%
-    select(-param_p, -nparam_p, everything(), param_p, nparam_p) %>%
-    group_by(explainatory) %>%
-    mutate_at(
-      vars(param_p, nparam_p),
-      ~ ifelse(row_number() == 1, .x, NA)
-    ) %>%
-    ungroup() %>%
-    gt(
-      groupname_col = "explainatory",
-      rowname_col = "lvl_exry"
-    ) %>%
-    cols_hide("explained") %>%
-    fmt_pvalue(
-      columns = vars(param_p, nparam_p)
-    ) %>%
-    tab_style(
-      style = cells_styles(text_align = "right"),
-      locations = cells_stub()
-    )  %>%
-    cols_align(
-      columns = vars(param_p, nparam_p),
-      align = "center"
-    ) %>%
-    fmt_missing(
-      columns = vars(param_p, nparam_p),
-      missing_text = ""
-    )
-}
-
 # high levels
 
 
@@ -563,7 +357,7 @@ quant_quali <- function(x) {
   type
 }
 
-explain_test <- function(df, exed) {
+explain_test <- function(df, exed, na.rm = FALSE) {
   exed <- dplyr::enquo(exed)
 
   exed_type <- quant_quali(dplyr::pull(df, !!exed))
@@ -583,98 +377,24 @@ explain_test <- function(df, exed) {
 
   quant <- purrr::map_dfr(
     names(cols_types[cols_types == "quant"]),
-    function(x) quant_test(df, !!exed, !!dplyr::sym(x))
+    function(x) quant_test(df, !!exed, !!dplyr::sym(x), na.rm = na.rm)
   )
 
   categ <- purrr::map_dfr(
     names(cols_types[cols_types == "categ"]),
-    function(x) categ_test(df, !!exed, !!dplyr::sym(x))
+    function(x) categ_test(df, !!exed, !!dplyr::sym(x), na.rm = na.rm)
   )
 
   list("quant" = quant, "categ" = categ, "exed_type" = exed_type)
 }
 
-explain_rmd <- function(df, exed, msg = "") {
-  exed <- rlang::enquo(exed)
-
-  expl <- explain_test(df, !!exed)
-
-  cat(glue::glue(
-    "
-    ## Univariate explaining of variable `{rlang::as_label(exed)}` {msg}
-    \n\n
-    ")
-  )
-
-
-  if (expl$exed_type == "quant") {
-    if (nrow(expl$quant) > 0) {
-      cat(glue::glue(
-        "
-      ### Correlation of `{rlang::as_label(exed)}` \\
-       with other quantitative variables
-      \n\n
-      "
-      ))
-      gt_qq(expl$quant) %>%
-        gt::as_raw_html() %>%
-        cat()
-      cat("\n\n")
-    }
-
-    if (nrow(expl$categ) > 0) {
-      cat(glue::glue(
-        "
-      ### Value of `{rlang::as_label(exed)}` \\
-      depending on other categorical variables
-      \n\n
-      "
-      ))
-      gt_qc(expl$categ) %>%
-        gt::as_raw_html() %>%
-        cat()
-      cat("\n\n")
-    }
-  }
-  else if (expl$exed_type == "categ") {
-    if (nrow(expl$quant) > 0) {
-      cat(glue::glue(
-        "
-      ### Values of other quantitative variables \\
-      depending on the level of `{rlang::as_label(exed)}`
-      \n\n
-      "
-      ))
-      gt_cq(expl$quant) %>%
-        gt::as_raw_html() %>%
-        cat()
-      cat("\n\n")
-    }
-
-    if (nrow(expl$categ) > 0) {
-      cat(glue::glue(
-        "
-      ### Proportions of `{rlang::as_label(exed)}` \\
-      depending on other categorical variables
-      \n\n
-      "
-      ))
-      gt_cc(expl$categ) %>%
-        gt::as_raw_html() %>%
-        cat()
-      cat("\n\n")
-    }
-  }
-  else stop("unable to produce the explanation")
-}
-
 #' explain
 #'
 #' @export
-explain_rmd <- function(df, exed, msg = "") {
+explain_rmd <- function(df, exed, msg = "", na.rm = FALSE) {
   exed <- rlang::enquo(exed)
 
-  expl <- explain_test(df, !!exed)
+  expl <- explain_test(df, !!exed, na.rm)
 
   cat(glue::glue(
     "
