@@ -12,7 +12,7 @@ qc_test <- function(df, exed, exry) {
 
   n_lvls <- df %>%
     dplyr::select(!!exed, !!exry) %>%
-    tidyr::drop-na() %>%
+    tidyr::drop_na() %>%
     dplyr::pull(!!exry) %>%
     factor() %>%
     levels() %>%
@@ -68,7 +68,7 @@ qq_test <- function(df, exed, exry) {
   exed <- dplyr::enquo(exed)
   exry <- dplyr::enquo(exry)
 
-  df <- dplyr::select(df, !!exed, !!exry) %>% tidyr::drop-na()
+  df <- dplyr::select(df, !!exed, !!exry) %>% tidyr::drop_na()
 
   out <- tibble::tibble(
     explained = rlang::as_name(exed),
