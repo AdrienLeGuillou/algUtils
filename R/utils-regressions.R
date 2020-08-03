@@ -1,4 +1,4 @@
-pre_reg <- function(dat, fmla) {
+pre_reg <- function(df, fmla) {
   dat <- model.frame(fmla, df)
   n_NA <- nrow(df) - nrow(dat)
 
