@@ -4,7 +4,7 @@
 \alias{cc_test}
 \title{categorical - categorical statistical testing}
 \usage{
-cc_test(df, exed, exry)
+cc_test(df, exed, exry, na.rm = FALSE)
 }
 \arguments{
 \item{exed}{variable to explain}

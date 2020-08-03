@@ -4,7 +4,7 @@
 \alias{qq_test}
 \title{quanti - quanti statistical testing}
 \usage{
-qq_test(df, exed, exry)
+qq_test(df, exed, exry, na.rm = FALSE)
 }
 \arguments{
 \item{exed}{variable to explain}

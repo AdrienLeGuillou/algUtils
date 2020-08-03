@@ -4,7 +4,7 @@
 \alias{cq_test}
 \title{categorical - quanti statistical testing}
 \usage{
-cq_test(df, exed, exry)
+cq_test(df, exed, exry, na.rm = FALSE)
 }
 \arguments{
 \item{exed}{variable to explain}

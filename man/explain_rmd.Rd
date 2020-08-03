@@ -4,7 +4,7 @@
 \alias{explain_rmd}
 \title{explain}
 \usage{
-explain_rmd(df, exed, msg = "")
+explain_rmd(df, exed, msg = "", na.rm = FALSE)
 }
 \description{
 explain
