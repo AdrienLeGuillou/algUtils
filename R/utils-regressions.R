@@ -57,6 +57,6 @@ alg_reg_auto <- function(df, fmla, accuracy = 0.001) {
   if (is.numeric(df[[y]])) {
     alg_reg_lm(df, fmla, accuracy)
   } else {
-    alg_reg_glm(df, fmla, accuracy)
+    alg_reg_logi(df, fmla, accuracy)
   }
 }
