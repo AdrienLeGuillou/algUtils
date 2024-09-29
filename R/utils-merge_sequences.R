@@ -34,7 +34,8 @@ merge_sequences <- function(beg, end, na.rm = FALSE) {
   n_new <- 1
   cur_int <- c(beg[1], end[1])
 
-  for (i in 2:n_intervals) {
+  i <- 2
+  while (i <= n_intervals) {
     comp_int <- c(beg[i], end[i])
     if (cur_int[2] >= comp_int[1]) { # do they overlap?
       cur_int <- c(cur_int[1], max(cur_int[2], comp_int[2])) # merge
@@ -44,6 +45,7 @@ merge_sequences <- function(beg, end, na.rm = FALSE) {
       n_new <- n_new + 1
       cur_int <- comp_int
     }
+    i <- i + 1
   }
 
   new_beg[n_new] <- cur_int[1]
