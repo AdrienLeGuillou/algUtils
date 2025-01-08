@@ -8,7 +8,7 @@ pre_reg <- function(df, fmla) {
 }
 
 kable_reg <- function(df) {
-    knitr::kable(df, format = "html") %>%
+    knitr::kable(df, format = "html") |>
     kableExtra::kable_styling(bootstrap_options = "striped")
 }
 
@@ -18,17 +18,17 @@ alg_reg_logi <- function(df, fmla, accuracy = 0.001) {
   mod <- glm(family = binomial, fmla, data = dat)
   frmt_est <- scales::label_number(accuracy)
 
-  mod %>%
-    broom::tidy() %>%
+  mod |>
+    broom::tidy() |>
     dplyr::mutate(
       IC_low = frmt_est(exp(estimate - 1.96 * std.error)),
       IC_hig = frmt_est(exp(estimate + 1.96 * std.error)),
       OR = frmt_est(exp(estimate)),
       OR_IC95 = glue::glue("{OR} [{IC_low}, {IC_hig}]"),
       p.value = frmt_pvalue(p.value)
-    ) %>%
-    dplyr::select(term, OR_IC95, p.value) %>%
-    dplyr::filter(term != "(Intercept)") %>%
+    ) |>
+    dplyr::select(term, OR_IC95, p.value) |>
+    dplyr::filter(term != "(Intercept)") |>
     kable_reg()
 }
 
@@ -38,17 +38,17 @@ alg_reg_lm <- function(df, fmla, accuracy = 0.001) {
   mod <- lm(fmla, data = dat)
   frmt_est <- scales::label_number(accuracy)
 
-  mod %>%
-    broom::tidy() %>%
+  mod |>
+    broom::tidy() |>
     dplyr::mutate(
       IC_low = frmt_est(estimate - 1.96 * std.error),
       IC_hig = frmt_est(estimate + 1.96 * std.error),
       estimate = frmt_est(estimate),
       estimate_IC95 = glue::glue("{estimate} [{IC_low}, {IC_hig}]"),
       p.value = frmt_pvalue(p.value)
-    ) %>%
-    dplyr::select(term, estimate_IC95, p.value) %>%
-    dplyr::filter(term != "(Intercept)") %>%
+    ) |>
+    dplyr::select(term, estimate_IC95, p.value) |>
+    dplyr::filter(term != "(Intercept)") |>
     kable_reg()
 }
 

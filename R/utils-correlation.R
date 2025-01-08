@@ -3,16 +3,16 @@ make_one_hot <- function(orig_var, name) {
   df <- tibble::tibble(orig_var)
   colnames(df) <- name
 
-  df %>%
-    mutate(i = row_number(), y = T) %>%
-    spread(!! quo(name), y, fill = F, sep = "_") %>%
+  df |>
+    mutate(i = row_number(), y = T) |>
+    spread(!! quo(name), y, fill = F, sep = "_") |>
     select(-i)
 }
 
 make_one_hot_lst <- function(df, orig_vars) {
   orig_vars <- enquos(orig_vars)
 
-  df_one <- df %>%
+  df_one <- df |>
     select(!!! orig_vars)
 
   df_one <- purrr::map2_dfc(
@@ -20,8 +20,8 @@ make_one_hot_lst <- function(df, orig_vars) {
     function(x, y) make_one_hot(x, y)
   )
 
-  df %>%
-    select(-c(!!! orig_vars)) %>%
+  df |>
+    select(-c(!!! orig_vars)) |>
     bind_cols(df_one)
 }
 
@@ -31,9 +31,9 @@ make_one_hot_df <- function(df) {
     is.character(x) | is.factor(x) | is.logical(x)
   }
 
-  orig_vars <- df %>% select_if(is_char_fac_lo) %>% colnames()
+  orig_vars <- df |> select_if(is_char_fac_lo) |> colnames()
 
-  df_one <- df %>%
+  df_one <- df |>
     select(!!! quos(orig_vars))
 
   df_one <- purrr::map2_dfc(
@@ -41,8 +41,8 @@ make_one_hot_df <- function(df) {
     function(x, y) make_one_hot(x, y)
   )
 
-  df %>%
-    select(-c(!!! quos(orig_vars))) %>%
+  df |>
+    select(-c(!!! quos(orig_vars))) |>
     bind_cols(df_one)
 }
 
